@@ -30,7 +30,7 @@ Auth::routes();
 Route::group([
     'prefix' => 'admin',
     'namespace' => 'Admin',
-    'middleware' => ['admin']
+    'middleware' => 'admin'
 ], function () {
     //admin
     Route::get('dashboard', [DashboardController::class, 'index']);
@@ -56,7 +56,7 @@ Route::group([
 Route::group([
     'namespace' => 'FrontEnd'
 ], function () {
-    Route::get('/', [HomeController::class, 'index'])->name('home');
+    Route::get('/', [HomeController::class, 'index']);
     //member:logout
     Route::get('member/logout', [MemberController::class, 'logout']);
     //blog:list

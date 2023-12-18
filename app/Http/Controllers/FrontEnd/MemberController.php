@@ -56,11 +56,8 @@ class MemberController extends Controller
      */
     public function show()
     {
-        if(Auth::check()) {
-            $countries = Country::all();
-            return view('frontend.member.account', compact('countries'));
-        }
-        return redirect('/member/login');
+        $countries = Country::all();
+        return view('frontend.member.account', compact('countries'));
     }
 
     /**

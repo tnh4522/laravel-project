@@ -107,6 +107,7 @@ class ProductController extends Controller
         $data = $request->all();
         $delete_image = $data['delete_image'] ?? null;
         $existingImages = json_decode($product->image, true) ?? [];
+        // validate image
         Validator::extend('image_update', function ($attribute, $value, $parameters, $validator) use (
             $delete_image,
             $existingImages
@@ -116,32 +117,43 @@ class ProductController extends Controller
             $totalImagesCount = $existingCount + $newImagesCount;
             return $totalImagesCount <= 3;
         });
-        $this->validate($request, [
-            'image' => 'nullable|array|max:3|image_update',
-        ], [
-            'image.image_update' => 'You can upload maximum 3 images.',
-        ]);
-        if ($delete_image) {
-            $imageKey = array_search($delete_image, $existingImages, true);
-            if ($imageKey !== false) {
-                $imagePath1 = public_path('upload/product/85x84/' . $delete_image);
-                if (file_exists($imagePath1)) {
-                    unlink($imagePath1);
+        if (!empty($delete_image)) {
+            $this->validate($request, [
+                'image' => 'require|array|max:3|image_update',
+            ], [
+                'image.image_update' => 'The image may not have more than 3 items.',
+                'image.require' => 'The image field is required.',
+            ]);
+
+//            foreach ($delete_image as $image) {
+//                $imagePath1 = public_path('upload/product/85x84/' . $image);
+//                if (file_exists($imagePath1)) {
+//                    unlink($imagePath1);
+//                }
+//                $imagePath2 = public_path('upload/product/329x380/' . $image);
+//                if (file_exists($imagePath2)) {
+//                    unlink($imagePath2);
+//                }
+//                $imagePath3 = public_path('upload/product/658x760/' . $image);
+//                if (file_exists($imagePath3)) {
+//                    unlink($imagePath3);
+//                }
+//            }
+            if ($request->hasFile('image')) {
+                $images = [];
+                foreach ($request->file('image') as $image) {
+                    $name = $image->getClientOriginalName();
+                    Image::make($image->getRealPath())->resize(85, 84)->save(public_path('upload/product/85x84/' . $name));
+                    Image::make($image->getRealPath())->resize(329, 380)->save(public_path('upload/product/329x380/' . $name));
+                    Image::make($image->getRealPath())->resize(658, 760)->save(public_path('upload/product/658x760/' . $name));
+                    $images[] = $name;
                 }
-                $imagePath2 = public_path('upload/product/329x380/' . $delete_image);
-                if (file_exists($imagePath2)) {
-                    unlink($imagePath2);
-                }
-                $imagePath3 = public_path('upload/product/658x760/' . $delete_image);
-                if (file_exists($imagePath3)) {
-                    unlink($imagePath3);
-                }
-                unset($existingImages[$imageKey]);
-                $existingImages = array_values($existingImages);
-                $product->image = json_encode($existingImages);
+                $data['image'] = json_encode(array_merge($existingImages, $images));
+            } else {
+                $data['image'] = json_encode($existingImages);
             }
         }
-        $product->save();
+
         return redirect('/member/product/list')->with('success', 'Product updated successfully.');
     }
     /**
